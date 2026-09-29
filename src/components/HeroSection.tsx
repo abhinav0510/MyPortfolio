@@ -296,7 +296,7 @@ function MiniLogo({ letter, color }: { letter: string; color: string }) {
 /* ===== Top Metrics Card (Dynamic Live Data) ===== */
 function TopMetricsCard() {
   const { data } = useGitHubData();
-  const publicRepos = data.publicRepos || 18;
+  const publicRepos = data?.publicRepos || 18;
 
   return (
     <div className="grid grid-cols-4 gap-0 p-3 rounded-xl bg-[#090a0e] border border-[#1a1d26] font-mono">
