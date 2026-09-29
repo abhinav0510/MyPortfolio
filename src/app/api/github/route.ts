@@ -13,6 +13,9 @@ export async function GET(request: Request) {
 
   const token = process.env.GITHUB_TOKEN || process.env.NEXT_PUBLIC_GITHUB_TOKEN;
 
+  const yearParam = searchParams.get('year');
+  const monthParam = searchParams.get('month');
+
   const headers: Record<string, string> = {
     'User-Agent': 'Portfolio-Cockpit-App',
     Accept: 'application/vnd.github.v3+json',
@@ -53,28 +56,39 @@ export async function GET(request: Request) {
       headers,
       cache: 'no-store'
     });
-    const eventsData = eventsRes.ok ? await eventsRes.json() : [];
+    
+    let eventsData: any[] = [];
+    if (eventsRes.ok) {
+      eventsData = await eventsRes.json();
+    } else {
+      console.warn(`GitHub Events API returned status ${eventsRes.status} for user ${username}`);
+    }
 
-    const parsedActivities: Array<{ action: string; target: string; time: string; type: string }> = [];
+    const parsedActivities: Array<{ action: string; target: string; time: string; type: string; detail?: string }> = [];
     const parsedCommits: Array<{ title: string; hash: string; time: string; repo: string }> = [];
 
-    if (Array.isArray(eventsData)) {
+    if (Array.isArray(eventsData) && eventsData.length > 0) {
       eventsData.forEach((event: any) => {
         const repoName = event.repo?.name ? event.repo.name.split('/')[1] || event.repo.name : 'repo';
         const timeAgo = formatTimeAgo(new Date(event.created_at));
 
         if (event.type === 'PushEvent') {
-          const commitCount = event.payload?.commits?.length || 1;
+          const commits = event.payload?.commits || [];
+          const commitCount = commits.length || event.payload?.size || 1;
+          const branch = event.payload?.ref ? event.payload.ref.replace('refs/heads/', '') : '';
+          const latestMsg = commits[0]?.message ? commits[0].message.split('\n')[0] : '';
+
           parsedActivities.push({
-            action: `Pushed ${commitCount} commit${commitCount > 1 ? 's' : ''} to`,
+            action: branch ? `Pushed ${commitCount} commit${commitCount > 1 ? 's' : ''} to ${branch} in` : `Pushed ${commitCount} commit${commitCount > 1 ? 's' : ''} to`,
             target: repoName,
             time: timeAgo,
-            type: 'push'
+            type: 'push',
+            detail: latestMsg || undefined
           });
 
           // Extract commits for Recent Commits widget
-          if (event.payload?.commits && Array.isArray(event.payload.commits)) {
-            event.payload.commits.forEach((c: any) => {
+          if (Array.isArray(commits)) {
+            commits.forEach((c: any) => {
               if (parsedCommits.length < 6) {
                 parsedCommits.push({
                   title: c.message ? c.message.split('\n')[0] : 'Update code',
@@ -94,58 +108,99 @@ export async function GET(request: Request) {
           });
         } else if (event.type === 'CreateEvent') {
           const refType = event.payload?.ref_type || 'repository';
+          const ref = event.payload?.ref ? `"${event.payload.ref}"` : '';
           parsedActivities.push({
-            action: `Created ${refType} in`,
+            action: `Created ${refType} ${ref} in`.trim(),
             target: repoName,
             time: timeAgo,
             type: 'create'
           });
         } else if (event.type === 'IssuesEvent') {
           const issueAction = event.payload?.action || 'updated';
+          const issueTitle = event.payload?.issue?.title ? `"${event.payload.issue.title}"` : '';
           parsedActivities.push({
-            action: `${capitalize(issueAction)} issue in`,
+            action: `${capitalize(issueAction)} issue ${issueTitle} in`.trim(),
             target: repoName,
             time: timeAgo,
             type: 'issue'
           });
         } else if (event.type === 'PullRequestEvent') {
           const prAction = event.payload?.action || 'updated';
+          const prTitle = event.payload?.pull_request?.title ? `"${event.payload.pull_request.title}"` : '';
           parsedActivities.push({
-            action: `${capitalize(prAction)} PR in`,
+            action: `${capitalize(prAction)} PR ${prTitle} in`.trim(),
             target: repoName,
             time: timeAgo,
             type: 'pr'
+          });
+        } else if (event.type === 'IssueCommentEvent') {
+          parsedActivities.push({
+            action: 'Commented on issue in',
+            target: repoName,
+            time: timeAgo,
+            type: 'comment'
+          });
+        } else if (event.type === 'ForkEvent') {
+          parsedActivities.push({
+            action: 'Forked repository',
+            target: repoName,
+            time: timeAgo,
+            type: 'fork'
           });
         }
       });
     }
 
-    // 4. GraphQL Query for Contributions if GITHUB_TOKEN is available
+    // 4. Monthly GraphQL Query
     let totalContributions = 0;
-    let totalCommitsCount = 0;
-    let totalPRsCount = 0;
-    let totalIssuesClosed = 0;
-    let monthlyGraph: number[] = [5, 12, 8, 15, 22, 18, 35];
+    let commitsThisMonth = 0;
+    let prsThisMonth = 0;
+    let issuesThisMonth = 0;
+    let accountRepositories = 0;
+    let calendarDays: Array<{ date: string; contributionCount: number; contributionLevel: string }> = [];
+
+    // Real date for current month comparison
+    const now = new Date();
+    const realYear = now.getUTCFullYear();
+    const realMonth = now.getUTCMonth(); // 0-indexed
+    const realDay = now.getUTCDate();
+
+    // Requested target year and month
+    const requestedYear = yearParam ? parseInt(yearParam, 10) : realYear;
+    const requestedMonth = monthParam ? parseInt(monthParam, 10) - 1 : realMonth; // 0-indexed
+    const isCurrentMonth = requestedYear === realYear && requestedMonth === realMonth;
+
+    // Calculate start & end of requested month
+    const lastDayOfRequestedMonth = new Date(Date.UTC(requestedYear, requestedMonth + 1, 0)).getUTCDate();
+    const monthStart = new Date(Date.UTC(requestedYear, requestedMonth, 1, 0, 0, 0));
+    const monthEnd = isCurrentMonth
+      ? new Date(Date.UTC(requestedYear, requestedMonth, realDay, 23, 59, 59, 999))
+      : new Date(Date.UTC(requestedYear, requestedMonth, lastDayOfRequestedMonth, 23, 59, 59, 999));
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = monthNames[requestedMonth] || 'Unknown';
 
     if (token) {
       try {
         const gqlQuery = `
-          query ($username: String!) {
+          query ($username: String!, $from: DateTime!, $to: DateTime!) {
             user(login: $username) {
-              contributionsCollection {
+              contributionsCollection(from: $from, to: $to) {
                 totalCommitContributions
                 totalIssueContributions
                 totalPullRequestContributions
-                totalPullRequestReviewContributions
                 contributionCalendar {
-                  totalContributions
                   weeks {
                     contributionDays {
                       contributionCount
+                      contributionLevel
                       date
                     }
                   }
                 }
+              }
+              repositories(privacy: PUBLIC, ownerAffiliations: OWNER, isFork: false) {
+                totalCount
               }
             }
           }
@@ -157,30 +212,49 @@ export async function GET(request: Request) {
             ...headers,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ query: gqlQuery, variables: { username } }),
+          body: JSON.stringify({ 
+            query: gqlQuery, 
+            variables: { 
+              username,
+              from: monthStart.toISOString(),
+              to: monthEnd.toISOString()
+            } 
+          }),
           cache: 'no-store'
         });
 
         if (gqlRes.ok) {
           const gqlData = await gqlRes.json();
-          const collection = gqlData?.data?.user?.contributionsCollection;
-          if (collection) {
-            totalContributions = collection.contributionCalendar?.totalContributions ?? 0;
-            totalCommitsCount = collection.totalCommitContributions ?? 0;
-            totalPRsCount = collection.totalPullRequestContributions ?? 0;
-            totalIssuesClosed = collection.totalIssueContributions ?? 0;
+          const userNode = gqlData?.data?.user;
+          const collection = userNode?.contributionsCollection;
+          
+          if (userNode) {
+            accountRepositories = userNode.repositories?.totalCount ?? 0;
+          }
 
-            // Calculate monthly aggregation from contribution calendar
+          if (collection) {
+            commitsThisMonth = collection.totalCommitContributions ?? 0;
+            prsThisMonth = collection.totalPullRequestContributions ?? 0;
+            issuesThisMonth = collection.totalIssueContributions ?? 0;
+
             const weeks = collection.contributionCalendar?.weeks || [];
-            const monthlySum: Record<number, number> = {};
+            
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            const monthStartStr = `${requestedYear}-${pad(requestedMonth + 1)}-01`;
+            const monthEndStr = `${requestedYear}-${pad(requestedMonth + 1)}-${pad(isCurrentMonth ? realDay : lastDayOfRequestedMonth)}`;
+
             weeks.forEach((w: any) => {
               w.contributionDays?.forEach((day: any) => {
-                const month = new Date(day.date).getMonth(); // 0-11
-                monthlySum[month] = (monthlySum[month] || 0) + (day.contributionCount || 0);
+                if (day.date >= monthStartStr && day.date <= monthEndStr) {
+                  calendarDays.push({
+                    date: day.date,
+                    contributionCount: day.contributionCount ?? 0,
+                    contributionLevel: day.contributionLevel ?? 'NONE'
+                  });
+                  totalContributions += (day.contributionCount ?? 0);
+                }
               });
             });
-            const months = [0, 1, 2, 3, 4, 5, 6];
-            monthlyGraph = months.map(m => monthlySum[m] || 0);
           }
         } else {
           console.error('GraphQL Response Error:', await gqlRes.text());
@@ -188,30 +262,6 @@ export async function GET(request: Request) {
       } catch (err) {
         console.error('GraphQL fetch error:', err);
       }
-    }
-
-    // 4b. Fetch real-time contribution calendar days from GitHub public profile page
-    let contributionDays: Array<{ date: string; level: number }> = [];
-    try {
-      const contribRes = await fetch(`https://github.com/users/${username}/contributions`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        },
-        cache: 'no-store'
-      });
-      if (contribRes.ok) {
-        const html = await contribRes.text();
-        const regex = /data-date="([^"]+)".*?data-level="(\d+)"/g;
-        let match;
-        while ((match = regex.exec(html)) !== null) {
-          contributionDays.push({
-            date: match[1],
-            level: parseInt(match[2], 10)
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching GitHub contribution calendar HTML:', err);
     }
 
     // 5. Calculate Language Distribution across repositories
@@ -242,23 +292,25 @@ export async function GET(request: Request) {
       publicRepos: userData.public_repos ?? (Array.isArray(reposData) ? reposData.length : 0),
       followers: userData.followers ?? 0,
       totalStars,
-      contributionDays,
-      languages: topLanguages.length > 0 ? topLanguages : [
-        { name: 'TypeScript', percentage: 45.3 },
-        { name: 'Java', percentage: 28.6 },
-        { name: 'JavaScript', percentage: 12.4 },
-        { name: 'SQL', percentage: 8.7 },
-        { name: 'Other', percentage: 5.0 }
-      ],
-      stats: {
-        contributions: totalContributions > 0 ? totalContributions : (contributionDays.reduce((acc, d) => acc + (d.level > 0 ? d.level * 2 : 0), 0) || 842),
-        commits: totalCommitsCount > 0 ? totalCommitsCount : 35,
-        prs: totalPRsCount > 0 ? totalPRsCount : 16,
-        repositories: userData.public_repos ?? (Array.isArray(reposData) ? reposData.length : 24),
-        starsEarned: totalStars,
-        issuesClosed: totalIssuesClosed > 0 ? totalIssuesClosed : 8,
-        monthlyGraph
+      languages: topLanguages,
+      
+      // Normalized Current Month Stats
+      currentMonth: {
+        year: requestedYear,
+        month: requestedMonth + 1,
+        monthName: monthName,
+        monthStart: `${requestedYear}-${(requestedMonth + 1).toString().padStart(2, '0')}-01`,
+        today: `${requestedYear}-${(requestedMonth + 1).toString().padStart(2, '0')}-${(isCurrentMonth ? realDay : lastDayOfRequestedMonth).toString().padStart(2, '0')}`,
+        
+        totalContributions,
+        commits: commitsThisMonth,
+        pullRequests: prsThisMonth,
+        issues: issuesThisMonth,
+        repositories: accountRepositories > 0 ? accountRepositories : (userData.public_repos ?? 0),
+        
+        calendar: calendarDays
       },
+
       activities: parsedActivities.slice(0, 5),
       commits: parsedCommits.slice(0, 4)
     });
@@ -267,10 +319,9 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch GitHub data',
-        fallback: true
+        error: error.message || 'Failed to fetch GitHub data'
       },
-      { status: 200 }
+      { status: 500 }
     );
   }
 }

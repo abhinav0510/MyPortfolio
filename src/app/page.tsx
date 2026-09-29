@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import HeroSection from '@/components/HeroSection';
 import SkillsSection from '@/components/SkillsSection';
 import ExperienceEducationSection from '@/components/ExperienceEducationSection';
-import BlogSection from '@/components/BlogSection';
+
 import ContactSection from '@/components/ContactSection';
 import Modals from '@/components/Modals';
 import AIExplainerModal from '@/components/AIExplainerModal';
@@ -25,7 +25,7 @@ export default function Home() {
   // Active section observer on scroll
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'projects', 'skills', 'experience', 'education', 'blog', 'contact'];
+      const sections = ['home', 'projects', 'skills', 'experience', 'education', 'contact'];
       const scrollPosition = window.scrollY + 200;
 
       for (const sectionId of sections) {
@@ -77,8 +77,7 @@ export default function Home() {
             onOpenEducationModal={(edu) => setSelectedEducation(edu)}
           />
 
-          {/* Blog */}
-          <BlogSection />
+
 
           {/* Contact */}
           <ContactSection />

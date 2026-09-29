@@ -7,6 +7,7 @@ export interface GitHubActivity {
   target: string;
   time: string;
   type: string;
+  detail?: string;
 }
 
 export interface GitHubCommitItem {
@@ -16,24 +17,31 @@ export interface GitHubCommitItem {
   repo: string;
 }
 
-export interface GitHubStatsData {
-  contributions: number;
+export interface GitHubContributionDay {
+  date: string;
+  contributionCount: number;
+  contributionLevel: string;
+}
+
+export interface CurrentMonthStats {
+  year: number;
+  month: number;
+  monthName: string;
+  monthStart: string;
+  today: string;
+  
+  totalContributions: number;
   commits: number;
-  prs: number;
+  pullRequests: number;
+  issues: number;
   repositories: number;
-  starsEarned: number;
-  issuesClosed: number;
-  monthlyGraph: number[];
+  
+  calendar: GitHubContributionDay[];
 }
 
 export interface GitHubLanguageItem {
   name: string;
   percentage: number;
-}
-
-export interface ContributionDay {
-  date: string;
-  level: number;
 }
 
 export interface GitHubResponseData {
@@ -44,49 +52,26 @@ export interface GitHubResponseData {
   publicRepos: number;
   followers: number;
   totalStars: number;
-  contributionDays?: ContributionDay[];
-  languages?: GitHubLanguageItem[];
-  stats: GitHubStatsData;
+  languages: GitHubLanguageItem[];
+  
+  currentMonth: CurrentMonthStats;
+  
   activities: GitHubActivity[];
   commits: GitHubCommitItem[];
-  fallback?: boolean;
 }
 
-const defaultStats: GitHubStatsData = {
-  contributions: 35,
-  commits: 24,
-  prs: 0,
-  repositories: 16,
-  starsEarned: 0,
-  issuesClosed: 0,
-  monthlyGraph: [2, 5, 8, 12, 14, 18, 35]
-};
+export interface UseGitHubDataOptions {
+  username?: string;
+  year?: number;
+  month?: number;
+}
 
-const defaultActivities: GitHubActivity[] = [
-  { action: 'Pushed changes to', target: 'myportfolio', time: '2h ago', type: 'push' },
-  { action: 'Created repository in', target: 'myportfolio', time: '5h ago', type: 'create' },
-  { action: 'Pushed 3 commits to', target: 'designsample', time: '1d ago', type: 'push' }
-];
+export function useGitHubData(opts?: string | UseGitHubDataOptions) {
+  const username = typeof opts === 'string' ? opts : opts?.username;
+  const year = typeof opts === 'object' ? opts?.year : undefined;
+  const month = typeof opts === 'object' ? opts?.month : undefined;
 
-const defaultCommits: GitHubCommitItem[] = [
-  { title: 'Update GitHub live API integration', hash: 'a1b2c3d', time: '2h ago', repo: 'MyPortfolio' },
-  { title: 'Redesign Projects section & video banners', hash: 'd4e5f6g', time: '5h ago', repo: 'MyPortfolio' },
-  { title: 'Update Experience & Education cards', hash: 'h7i8j9k', time: '1d ago', repo: 'MyPortfolio' }
-];
-
-export function useGitHubData(username?: string) {
-  const [data, setData] = useState<GitHubResponseData>({
-    success: true,
-    username: username || 'abhinav0510',
-    name: 'Abhinav Srivastava',
-    avatarUrl: '',
-    publicRepos: 16,
-    followers: 0,
-    totalStars: 0,
-    stats: defaultStats,
-    activities: defaultActivities,
-    commits: defaultCommits
-  });
+  const [data, setData] = useState<GitHubResponseData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,44 +81,33 @@ export function useGitHubData(username?: string) {
     async function fetchGitHubData() {
       try {
         setLoading(true);
-        const query = username ? `?username=${encodeURIComponent(username)}` : '';
-        const res = await fetch(`/api/github${query}`);
-        if (!res.ok) throw new Error('API request failed');
+        setError(null);
+        
+        const params = new URLSearchParams();
+        if (username) params.set('username', username);
+        if (year) params.set('year', year.toString());
+        if (month) params.set('month', month.toString());
+        
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        const res = await fetch(`/api/github${queryString}`);
+        
+        if (!res.ok) {
+          throw new Error('Unable to load GitHub activity');
+        }
+        
         const json = await res.json();
         
-        if (isMounted && json.success && !json.fallback) {
-          setData({
-            success: true,
-            username: json.username ?? 'abhinav0510',
-            name: json.name ?? 'Abhinav Srivastava',
-            avatarUrl: json.avatarUrl ?? '',
-            publicRepos: json.publicRepos ?? 16,
-            followers: json.followers ?? 0,
-            totalStars: json.totalStars ?? 0,
-            languages: json.languages ?? [
-              { name: 'TypeScript', percentage: 45.3 },
-              { name: 'Java', percentage: 28.6 },
-              { name: 'JavaScript', percentage: 12.4 },
-              { name: 'SQL', percentage: 8.7 },
-              { name: 'Other', percentage: 5.0 }
-            ],
-            stats: {
-              contributions: json.stats?.contributions ?? 0,
-              commits: json.stats?.commits ?? 0,
-              prs: json.stats?.prs ?? 0,
-              repositories: json.stats?.repositories ?? json.publicRepos ?? 16,
-              starsEarned: json.stats?.starsEarned ?? json.totalStars ?? 0,
-              issuesClosed: json.stats?.issuesClosed ?? 0,
-              monthlyGraph: json.stats?.monthlyGraph ?? [2, 5, 8, 12, 14, 18, 35]
-            },
-            activities: json.activities && json.activities.length > 0 ? json.activities : defaultActivities,
-            commits: json.commits && json.commits.length > 0 ? json.commits : defaultCommits
-          });
+        if (!json.success) {
+          throw new Error(json.error || 'Unable to load GitHub activity');
+        }
+        
+        if (isMounted) {
+          setData(json);
           setError(null);
         }
       } catch (err: any) {
         if (isMounted) {
-          setError(err.message);
+          setError(err.message || 'Unable to load GitHub activity');
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -148,7 +122,9 @@ export function useGitHubData(username?: string) {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [username]);
+  }, [username, year, month]);
 
   return { data, loading, error };
 }
+
+

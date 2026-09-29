@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Briefcase, GraduationCap, ArrowRight, Calendar, ExternalLink, Check, Minus, Square, X } from 'lucide-react';
 import { experienceData, educationData, ExperienceItem, EducationItem } from '@/data/portfolioData';
 
@@ -21,7 +22,7 @@ export default function ExperienceEducationSection({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-widest">
             <span className="text-neutral-600">⌐</span>
-            <span>03 / PORTFOLIO</span>
+            {/* <span>03 / PORTFOLIO</span> */}
             <span className="flex-1 h-px bg-[#1a1d26] ml-2 max-w-25"></span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
@@ -155,8 +156,18 @@ export default function ExperienceEducationSection({
               <div key={edu.id} className="space-y-4">
                 {/* Degree Header */}
                 <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-                    <GraduationCap size={20} className="text-white" />
+                  <div className="w-11 h-11 rounded-xl bg-white border border-white/20 flex items-center justify-center shrink-0 overflow-hidden relative p-1">
+                    {edu.logo ? (
+                      <Image
+                        src={edu.logo}
+                        alt={edu.institution}
+                        width={44}
+                        height={44}
+                        className="w-full h-full object-contain rounded-lg"
+                      />
+                    ) : (
+                      <GraduationCap size={20} className="text-black" />
+                    )}
                   </div>
                   <div className="flex-1 space-y-0.5 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -177,7 +188,7 @@ export default function ExperienceEducationSection({
                   <div className="p-3 rounded-lg bg-[#0d0f16] border border-[#1a1d26] space-y-2">
                     <span className="text-[9px] text-neutral-500 uppercase tracking-wider block">CGPA</span>
                     <div className="text-xl font-extrabold text-white font-sans">
-                      8.2 <span className="text-sm font-normal text-neutral-500">/ 10</span>
+                      7.2 <span className="text-sm font-normal text-neutral-500">/ 10</span>
                     </div>
                     {/* CGPA bar segments */}
                     <div className="flex gap-0.5">
@@ -191,7 +202,7 @@ export default function ExperienceEducationSection({
                   <div className="p-3 rounded-lg bg-[#0d0f16] border border-[#1a1d26] space-y-2">
                     <span className="text-[9px] text-neutral-500 uppercase tracking-wider block">PERCENTILE</span>
                     <div className="text-xl font-extrabold text-white font-sans">
-                      82.4<span className="text-sm font-normal text-neutral-500">%</span>
+                      72.4<span className="text-sm font-normal text-neutral-500">%</span>
                     </div>
                     {/* Percentile progress bar */}
                     <div className="w-full h-1 rounded-full bg-[#1a1d26] overflow-hidden">

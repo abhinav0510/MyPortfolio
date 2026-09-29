@@ -194,12 +194,17 @@ export default function Modals({
             <div className="space-y-3">
               <h4 className="text-xs uppercase font-mono text-neutral-400 font-bold tracking-wider">Education</h4>
               <div className="bg-[#0b0c10] p-4 rounded-xl border border-white/10 flex justify-between items-center">
-                <div>
-                  <h5 className="text-sm font-bold text-white">B.Tech in Computer Science</h5>
-                  <p className="text-xs text-neutral-400">Dr. A.P.J. Abdul Kalam Technical University</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white border border-white/20 flex items-center justify-center shrink-0 overflow-hidden relative p-1">
+                    <Image src="/assets/AKTU.png" alt="AKTU Logo" width={40} height={40} className="w-full h-full object-contain rounded-md" />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-white">B.Tech in Artificial Intelligence And Machine Learning</h5>
+                    <p className="text-xs text-neutral-400">Dr. A.P.J. Abdul Kalam Technical University</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono text-amber-400 block">CGPA: 8.2/10</span>
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-mono text-amber-400 block">CGPA: 7.2/10</span>
                   <span className="text-[11px] font-mono text-neutral-500">2022 – 2026</span>
                 </div>
               </div>
@@ -264,8 +269,18 @@ export default function Modals({
             </button>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <Award size={24} />
+              <div className="w-12 h-12 rounded-xl bg-white border border-white/20 flex items-center justify-center shrink-0 overflow-hidden relative p-1">
+                {selectedEducation.logo ? (
+                  <Image
+                    src={selectedEducation.logo}
+                    alt={selectedEducation.institution}
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                ) : (
+                  <Award size={24} className="text-amber-400" />
+                )}
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">{selectedEducation.degree}</h3>

@@ -47,16 +47,10 @@ export interface EducationItem {
   period: string;
   score: string;
   location: string;
+  logo?: string;
 }
 
-export interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  date: string;
-  readTime: string;
-  category: string;
-}
+
 
 export const personalData = {
   name: "Abhinav Srivastava",
@@ -78,9 +72,9 @@ export const personalData = {
   ],
   socials: {
     github: "https://github.com/abhinav0510",
-    linkedin: "https://linkedin.com",
+    linkedin: "https://www.linkedin.com/in/abhinav-srivastava-184251247/",
     twitter: "https://x.com",
-    instagram: "https://instagram.com",
+    instagram: "https://instagram.com/abhinavsrivasttava",
     email: "mailto:abhinavsrivas05@gmail.com"
   }
 };
@@ -148,103 +142,127 @@ export const projectsData: Project[] = [
     }
   },
   {
-    id: "ai-resume-analyzer",
-    title: "AI Resume Analyzer",
-    description: "Evaluate resumes using LLM APIs to receive real-time ATS compatibility scoring, skill gap detection, and feedback.",
-    longDescription: "Leverages OpenAI & FastAPI to evaluate resume ATS compatibility against specific job descriptions. Highlights missing technical keywords, calculates relevance scores, and generates polished summary revisions in seconds.",
-    image: "/projects/resume-analyzer.png",
-    tags: ["Next.js", "FastAPI", "Python", "OpenAI API", "AI/ML"],
-    liveDemoUrl: "https://resumeai.demo.dev",
-    githubUrl: "https://github.com/abhinavsrivastava/ai-resume-analyzer",
-    featured: true,
-    category: "AI/ML",
-    stars: 32,
-    aiContext: {
-      architectureDiagramSummary: "Next.js -> Async FastAPI -> PyPDF2 Document Parser -> OpenAI Tokenizer -> Pydantic JSON Validator.",
-      keyChallengesSolved: [
-        "Extracting text from complex multi-column PDFs cleanly",
-        "Strict Pydantic JSON schema to prevent LLM hallucinations"
-      ],
-      systemDesignHighlights: [
-        "Server-Sent Events (SSE) for streaming analysis output",
-        "Token optimization reducing API costs by 40%"
-      ],
-      suggestedQuestions: [
-        "⚡ How does PDF parsing work under the hood?",
-        "🛠️ How do you prevent LLM hallucinations?",
-        "💼 Give me a 30-second elevator pitch",
-        "🧠 What embeddings/models are used?"
-      ]
-    }
-  },
-  {
-    id: "dev-portal-cms",
-    title: "Enterprise Content Hub",
-    description: "Headless CMS and high-speed API gateway optimized for modern web applications and micro-frontend architectures.",
-    longDescription: "Built with Next.js App Router and Spring Boot microservices, delivering optimized dynamic pages with under 50ms response times via Redis caching and PostgreSQL query optimization.",
-    image: "/projects/content-hub.png",
-    tags: ["Next.js", "Spring Boot", "Redis", "Docker", "PostgreSQL"],
-    liveDemoUrl: "https://cms.demo.dev",
-    githubUrl: "https://github.com/abhinavsrivastava/content-hub",
-    featured: false,
-    category: "Backend",
-    stars: 15,
-    aiContext: {
-      architectureDiagramSummary: "Next.js App Router -> Spring Boot API Gateway -> Redis Cache Cluster -> PostgreSQL Database.",
-      keyChallengesSolved: [
-        "Distributed cache invalidation on content publish events",
-        "Achieving sub-50ms p99 query latency under load"
-      ],
-      systemDesignHighlights: [
-        "Redis Pub/Sub cache sync",
-        "Docker containerization for environment parity"
-      ],
-      suggestedQuestions: [
-        "⚡ Explain the Redis caching strategy",
-        "🛠️ How are microservices orchestrated?"
-      ]
-    }
-  },
-  {
-    id: "realtime-chat-engine",
-    title: "Distributed WebSockets Chat",
-    description: "Low-latency real-time messaging engine with Redis Pub/Sub backplane and room management.",
-    longDescription: "Engineered to handle high-throughput message streaming with connection pooling, typing indicators, end-to-end message delivery acknowledgments, and horizontally scalable socket nodes.",
-    image: "/projects/content-hub.png",
-    tags: ["Node.js", "Express", "WebSockets", "Redis", "React"],
-    liveDemoUrl: "https://chat.demo.dev",
-    githubUrl: "https://github.com/abhinavsrivastava/websocket-chat",
-    featured: false,
-    category: "Backend",
-    stars: 29,
-    aiContext: {
-      architectureDiagramSummary: "React -> Node.js WebSocket (ws) -> Redis Pub/Sub Backplane -> MongoDB Store.",
-      keyChallengesSolved: [
-        "Scaling WebSockets horizontally across server nodes"
-      ],
-      systemDesignHighlights: [
-        "Heartbeat ping-pong for broken connection cleanup",
-        "Redis Pub/Sub message broker"
-      ],
-      suggestedQuestions: [
-        "⚡ How does Redis Pub/Sub enable WebSocket scaling?",
-        "🛠️ How are dropped connections handled?"
-      ]
-    }
-  },
-  {
-    id: "cloud-devops-pipeline",
-    title: "Automated K8s Deployment Pipeline",
-    description: "Zero-downtime CI/CD deployment pipeline with Docker containerization and Kubernetes cluster management.",
-    longDescription: "Comprehensive DevOps pipeline integrating GitHub Actions, Helm charts, Prometheus monitoring, and automated rollback triggers across multi-zone Kubernetes clusters.",
-    image: "/projects/job-tracker.png",
-    tags: ["Docker", "Kubernetes", "GitHub Actions", "AWS", "Helm"],
-    liveDemoUrl: "https://devops.demo.dev",
-    githubUrl: "https://github.com/abhinavsrivastava/k8s-ci-cd-pipeline",
-    featured: false,
-    category: "Backend",
-    stars: 21
+  id: "catlin-cms",
+  title: "CATLIN Pharmaceutical CMS",
+  videoUrl: "/assets/CatlinCMS.mp4",
+  description: "A secure full-stack content management system built for CATLIN Pharmaceuticals to manage products, media, company content, and website data through an authenticated admin dashboard.",
+  longDescription: "A production-ready pharmaceutical content management platform built with React/Next.js and Spring Boot, backed by MySQL and object/file storage. Provides authenticated administration for managing products, categories, images, documents, company information, and website content, with a focus on security, validation, reliable file handling, and production deployment through Docker and Nginx.",
+  image: "/projects/catlin-cms.png",
+  tags: [
+    "React",
+    "Spring Boot",
+    "Java",
+    "MySQL",
+    "Docker",
+    "Nginx",
+    "REST API",
+    "JWT",
+    "CMS"
+  ],
+  liveDemoUrl: "https://catlinpharmaceuticals.com",
+  githubUrl: "https://github.com/abhinav0510/CatlinPharma",
+  featured: true,
+  category: "Full Stack",
+  stars: 0,
+  aiContext: {
+    architectureDiagramSummary: "React Frontend -> Nginx Reverse Proxy -> Spring Boot REST API -> MySQL Database + File/Object Storage.",
+    keyChallengesSolved: [
+      "Building a secure authenticated CMS for pharmaceutical website content",
+      "Managing product images and documents with reliable upload, storage, validation, and retrieval workflows",
+      "Designing a clean separation between frontend, backend, database, and production infrastructure",
+      "Protecting administrative APIs and sensitive configuration from unauthorized access",
+      "Deploying the complete application using Docker and Nginx with HTTPS and production routing"
+    ],
+    systemDesignHighlights: [
+      "RESTful Spring Boot backend serving authenticated CMS APIs",
+      "Role-based administrative access and protected API endpoints",
+      "MySQL persistence layer for structured pharmaceutical and website content",
+      "Dockerized application services for consistent local and production environments",
+      "Nginx reverse proxy handling production traffic and frontend/backend routing",
+      "HTTPS-enabled production deployment with domain-based routing",
+      "Validated file upload pipeline for CMS-managed media and documents"
+    ],
+    suggestedQuestions: [
+      "🏗️ Explain the complete CATLIN CMS architecture",
+      "🔐 How is authentication and API security implemented?",
+      "📦 How does Docker + Nginx deployment work?",
+      "🗄️ How does the Spring Boot backend communicate with MySQL?",
+      "📁 How are uploaded images and documents stored and served?",
+      "🌐 How does a request travel from catlinpharmaceuticals.com to the backend?",
+      "🛡️ What security vulnerabilities should I look for in this CMS?",
+      "🚀 How would you troubleshoot a production deployment issue?"
+    ]
   }
+
+  },
+  // {
+  //   id: "dev-portal-cms",
+  //   title: "Enterprise Content Hub",
+  //   description: "Headless CMS and high-speed API gateway optimized for modern web applications and micro-frontend architectures.",
+  //   longDescription: "Built with Next.js App Router and Spring Boot microservices, delivering optimized dynamic pages with under 50ms response times via Redis caching and PostgreSQL query optimization.",
+  //   image: "/projects/content-hub.png",
+  //   tags: ["Next.js", "Spring Boot", "Redis", "Docker", "PostgreSQL"],
+  //   liveDemoUrl: "https://cms.demo.dev",
+  //   githubUrl: "https://github.com/abhinavsrivastava/content-hub",
+  //   featured: false,
+  //   category: "Backend",
+  //   stars: 15,
+  //   aiContext: {
+  //     architectureDiagramSummary: "Next.js App Router -> Spring Boot API Gateway -> Redis Cache Cluster -> PostgreSQL Database.",
+  //     keyChallengesSolved: [
+  //       "Distributed cache invalidation on content publish events",
+  //       "Achieving sub-50ms p99 query latency under load"
+  //     ],
+  //     systemDesignHighlights: [
+  //       "Redis Pub/Sub cache sync",
+  //       "Docker containerization for environment parity"
+  //     ],
+  //     suggestedQuestions: [
+  //       "⚡ Explain the Redis caching strategy",
+  //       "🛠️ How are microservices orchestrated?"
+  //     ]
+  //   }
+  // },
+  // {
+  //   id: "realtime-chat-engine",
+  //   title: "Distributed WebSockets Chat",
+  //   description: "Low-latency real-time messaging engine with Redis Pub/Sub backplane and room management.",
+  //   longDescription: "Engineered to handle high-throughput message streaming with connection pooling, typing indicators, end-to-end message delivery acknowledgments, and horizontally scalable socket nodes.",
+  //   image: "/projects/content-hub.png",
+  //   tags: ["Node.js", "Express", "WebSockets", "Redis", "React"],
+  //   liveDemoUrl: "https://chat.demo.dev",
+  //   githubUrl: "https://github.com/abhinavsrivastava/websocket-chat",
+  //   featured: false,
+  //   category: "Backend",
+  //   stars: 29,
+  //   aiContext: {
+  //     architectureDiagramSummary: "React -> Node.js WebSocket (ws) -> Redis Pub/Sub Backplane -> MongoDB Store.",
+  //     keyChallengesSolved: [
+  //       "Scaling WebSockets horizontally across server nodes"
+  //     ],
+  //     systemDesignHighlights: [
+  //       "Heartbeat ping-pong for broken connection cleanup",
+  //       "Redis Pub/Sub message broker"
+  //     ],
+  //     suggestedQuestions: [
+  //       "⚡ How does Redis Pub/Sub enable WebSocket scaling?",
+  //       "🛠️ How are dropped connections handled?"
+  //     ]
+  //   }
+  // },
+  // {
+  //   id: "cloud-devops-pipeline",
+  //   title: "Automated K8s Deployment Pipeline",
+  //   description: "Zero-downtime CI/CD deployment pipeline with Docker containerization and Kubernetes cluster management.",
+  //   longDescription: "Comprehensive DevOps pipeline integrating GitHub Actions, Helm charts, Prometheus monitoring, and automated rollback triggers across multi-zone Kubernetes clusters.",
+  //   image: "/projects/job-tracker.png",
+  //   tags: ["Docker", "Kubernetes", "GitHub Actions", "AWS", "Helm"],
+  //   liveDemoUrl: "https://devops.demo.dev",
+  //   githubUrl: "https://github.com/abhinavsrivastava/k8s-ci-cd-pipeline",
+  //   featured: false,
+  //   category: "Backend",
+  //   stars: 21
+  // }
 ];
 
 export const skillsData: Skill[] = [
@@ -303,30 +321,13 @@ export const experienceData: ExperienceItem[] = [
 
 export const educationData: EducationItem[] = [
   {
-    id: "btech-cs",
+    id: "btech-AI/ML",
     degree: "B.Tech in Artificial Intelligence And Machine Learning",
     institution: "Dr. A.P.J. Abdul Kalam Technical University",
     period: "2022 – 2026",
     score: "CGPA: 7.2/10",
-    location: "Uttar Pradesh, India"
+    location: "Uttar Pradesh, India",
+    logo: "/assets/AKTU.png"
   }
 ];
 
-export const blogPostsData: BlogPost[] = [
-  {
-    id: "nextjs-app-router-best-practices",
-    title: "Mastering Next.js App Router for High-Performance Applications",
-    excerpt: "A deep dive into Server Components, streaming SSR, and asset optimization techniques.",
-    date: "Aug 12, 2026",
-    readTime: "5 min read",
-    category: "Next.js"
-  },
-  {
-    id: "spring-boot-react-integration",
-    title: "Architecting Microservices with Spring Boot & Modern React",
-    excerpt: "Best practices for JWT authentication, CORS handling, and REST API proxying in production.",
-    date: "Jul 28, 2026",
-    readTime: "7 min read",
-    category: "Full Stack"
-  }
-];

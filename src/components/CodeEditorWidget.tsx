@@ -172,7 +172,7 @@ export default function CodeEditorWidget() {
       {/* Terminal status line */}
       <div className="px-3 py-2 bg-[#050608] border-t border-[#1a1d26] font-mono text-[11px] text-white flex items-center gap-1.5">
         <span className="text-neutral-500">&gt;</span>
-        <span>abhinav@portfolio:~ $ Building the future...</span>
+        <span>abhinav@portfolio:~ $ Working on future...</span>
         <span className="w-1.5 h-3 bg-white inline-block animate-pulse"></span>
       </div>
     </div>

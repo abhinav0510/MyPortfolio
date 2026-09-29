@@ -119,7 +119,7 @@ export default function HeroSection({ onViewWorkClick, onDownloadResumeClick, on
                 <span className="text-[8px] text-neutral-500 uppercase leading-tight block">Happy Clients</span>
               </div>
               <div>
-                <span className="text-sm sm:text-base font-extrabold text-white block">{githubData.publicRepos || 16}+</span>
+                <span className="text-sm sm:text-base font-extrabold text-white block">{githubData?.publicRepos || 16}+</span>
                 <span className="text-[8px] text-neutral-500 uppercase leading-tight block">Open Source Repos</span>
               </div>
             </div>

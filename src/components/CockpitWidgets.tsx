@@ -1,15 +1,15 @@
 'use client';
 
 import React from 'react';
-import { ChevronRight, Trash2, Maximize2, Copy, GitBranch, ArrowRight, Users, ClipboardList, Code2, CheckCircle2, UserCheck, Rocket, Mail } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Maximize2, Copy, GitBranch, ArrowRight, Users, ClipboardList, Code2, CheckCircle2, UserCheck, Rocket, Mail } from 'lucide-react';
 import { useGitHubData } from '@/hooks/useGitHubData';
 import { personalData } from '@/data/portfolioData';
 import { GithubIcon, LinkedinIcon } from './SocialIcons';
 
 /* 1. Activity Feed Widget (LIVE Real-Time API Data) */
 export function ActivityFeedWidget() {
-  const { data, loading } = useGitHubData();
-  const activities = data.activities;
+  const { data, loading, error } = useGitHubData();
+  const activities = data?.activities || [];
 
   return (
     <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] font-mono h-full flex flex-col justify-between shadow-xl space-y-3">
@@ -27,16 +27,31 @@ export function ActivityFeedWidget() {
 
         <div className="space-y-1 text-[10px]">
           {loading && activities.length === 0 ? (
-            <div className="py-2 text-[9px] text-neutral-500 animate-pulse">Syncing GitHub feed...</div>
+            <div className="space-y-1.5 py-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className="h-5 bg-[#141722] rounded animate-pulse w-full"></div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="py-3 text-[9px] text-red-400 text-center">Unable to load live activity</div>
+          ) : activities.length === 0 ? (
+            <div className="py-3 text-[9px] text-neutral-500 text-center">No recent GitHub activity</div>
           ) : (
-            activities.map((act, i) => (
-              <div key={i} className="flex items-center justify-between py-1 border-b border-[#111520] last:border-0 hover:bg-[#111520]/50 px-1 rounded transition-colors">
-                <div className="flex items-center gap-1.5 overflow-hidden pr-1 text-neutral-400">
-                  <span className="w-1.5 h-1.5 rounded-full border border-white/50 shrink-0 bg-white/20"></span>
-                  <span className="truncate">{act.action}</span>
-                  <span className="text-white font-semibold truncate">{act.target}</span>
+            activities.slice(0, 5).map((act, i) => (
+              <div key={i} className="py-1 border-b border-[#111520] last:border-0 hover:bg-[#111520]/50 px-1 rounded transition-colors">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <div className="flex items-center gap-1.5 overflow-hidden pr-1">
+                    <span className="w-1.5 h-1.5 rounded-full border border-white/50 shrink-0 bg-white/20"></span>
+                    <span className="truncate">{act.action}</span>
+                    <span className="text-white font-semibold truncate">{act.target}</span>
+                  </div>
+                  <span className="text-[9px] text-neutral-500 shrink-0 ml-1">{act.time}</span>
                 </div>
-                <span className="text-[9px] text-neutral-500 shrink-0 ml-1">{act.time}</span>
+                {act.detail && (
+                  <p className="text-[8.5px] text-neutral-500 truncate pl-3 font-sans mt-0.5 italic">
+                    "{act.detail}"
+                  </p>
+                )}
               </div>
             ))
           )}
@@ -145,40 +160,80 @@ export function TechStackOverviewWidget() {
 
 /* 3. GitHub Activity & Heatmap Widget — Real-Time API Powered */
 export function GitHubStatsWidget() {
-  const { data } = useGitHubData();
-  const stats = data.stats;
-  const rawDays = data.contributionDays || [];
+  const [now] = React.useState(() => new Date());
+  const realYear = now.getUTCFullYear();
+  const realMonth = now.getUTCMonth() + 1; // 1-indexed
 
-  // Group raw contribution days into 7 rows (0: Sun, 1: Mon, ... 6: Sat)
-  const rows: Array<Array<{ date: string; level: number; styleClass: string }>> = Array.from({ length: 7 }, () => []);
+  const [selectedYear, setSelectedYear] = React.useState<number>(realYear);
+  const [selectedMonth, setSelectedMonth] = React.useState<number>(realMonth);
 
-  if (rawDays.length > 0) {
-    rawDays.forEach((d) => {
-      const dateObj = new Date(d.date);
-      const dayOfWeek = dateObj.getDay(); // 0 (Sun) .. 6 (Sat)
-      let styleClass = 'bg-[#141722]';
-      if (d.level >= 4) styleClass = 'bg-white opacity-90 shadow-[0_0_6px_rgba(255,255,255,0.8)]';
-      else if (d.level === 3) styleClass = 'bg-white/75';
-      else if (d.level === 2) styleClass = 'bg-white/45';
-      else if (d.level === 1) styleClass = 'bg-white/20';
+  const { data, loading, error } = useGitHubData({ year: selectedYear, month: selectedMonth });
 
-      rows[dayOfWeek].push({
-        date: d.date,
-        level: d.level,
-        styleClass
-      });
-    });
-  } else {
-    // Fallback if data is loading
-    for (let r = 0; r < 7; r++) {
-      for (let c = 0; c < 26; c++) {
-        rows[r].push({ date: '', level: 0, styleClass: 'bg-[#141722]' });
-      }
+  const isCurrentMonth = selectedYear === realYear && selectedMonth === realMonth;
+
+  const handlePrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(prev => prev - 1);
+    } else {
+      setSelectedMonth(prev => prev - 1);
     }
+  };
+
+  const handleNextMonth = () => {
+    if (isCurrentMonth) return;
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(prev => prev + 1);
+    } else {
+      setSelectedMonth(prev => prev + 1);
+    }
+  };
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  if (error) {
+    return (
+      <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] flex items-center justify-center font-mono h-full text-[10px] text-red-400">
+        Unable to load GitHub activity
+      </div>
+    );
   }
 
-  // Get the last 26 weeks for layout
-  const displayMatrix = rows.map(row => row.slice(-26));
+  if (loading || !data) {
+    return (
+      <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] space-y-3 font-mono h-full flex flex-col justify-between animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="h-3 bg-[#161822] rounded w-24"></div>
+          <div className="h-4 bg-[#161822] rounded w-20"></div>
+        </div>
+        <div className="h-6 bg-[#161822] rounded w-16 mt-2"></div>
+        <div className="flex-1 bg-[#161822] rounded mt-4"></div>
+        <div className="grid grid-cols-4 gap-2 pt-2 border-t border-[#161822]">
+          <div className="h-6 bg-[#161822] rounded w-full"></div>
+          <div className="h-6 bg-[#161822] rounded w-full"></div>
+          <div className="h-6 bg-[#161822] rounded w-full"></div>
+          <div className="h-6 bg-[#161822] rounded w-full"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const { currentMonth } = data;
+  const { totalContributions, commits, pullRequests, issues, repositories, calendar, monthName, year } = currentMonth;
+
+  const getCellColor = (count: number) => {
+    if (count === 0) return 'bg-[#141722] text-neutral-500';
+    if (count <= 2) return 'bg-[#0e4429] text-emerald-100 font-semibold';
+    if (count <= 5) return 'bg-[#006d32] text-white font-bold';
+    if (count <= 10) return 'bg-[#26a641] text-black font-extrabold';
+    return 'bg-[#39d353] text-black font-extrabold';
+  };
+
+  // Calculate starting day of the week for day 1 of the month (0 = Sun, 6 = Sat)
+  const firstDayOfWeek = (calendar && calendar.length > 0)
+    ? new Date(Date.UTC(parseInt(calendar[0].date.split('-')[0], 10), parseInt(calendar[0].date.split('-')[1], 10) - 1, 1)).getUTCDay()
+    : 0;
 
   return (
     <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] space-y-3 font-mono h-full flex flex-col justify-between">
@@ -186,70 +241,89 @@ export function GitHubStatsWidget() {
         <span className="text-[11px] uppercase font-bold text-neutral-300 tracking-wider flex items-center gap-1.5">
           GITHUB ACTIVITY
         </span>
-        <span className="text-[9px] text-neutral-400 bg-[#111520] px-2 py-0.5 rounded border border-[#1a1d26] cursor-pointer hover:border-neutral-700">
-          This Year ▾
-        </span>
+        <div className="flex items-center gap-1 bg-[#111520] px-1.5 py-0.5 rounded border border-[#1a1d26]">
+          <button
+            onClick={handlePrevMonth}
+            title="Previous Month"
+            className="text-neutral-400 hover:text-white transition-colors p-0.5 cursor-pointer"
+          >
+            <ChevronLeft size={12} />
+          </button>
+          <span className="text-[9px] font-bold text-white uppercase px-1 min-w-[85px] text-center select-none">
+            {monthName || monthNames[selectedMonth - 1]} {year || selectedYear}
+          </span>
+          <button
+            onClick={handleNextMonth}
+            disabled={isCurrentMonth}
+            title={isCurrentMonth ? 'Current Month' : 'Next Month'}
+            className={`transition-colors p-0.5 ${isCurrentMonth ? 'text-neutral-600 cursor-not-allowed' : 'text-neutral-400 hover:text-white cursor-pointer'}`}
+          >
+            <ChevronRight size={12} />
+          </button>
+        </div>
       </div>
 
-      {/* Contributions Count Header */}
       <div className="flex items-baseline justify-between pt-0.5">
         <div>
-          <span className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">{stats.contributions || 842}</span>
+          <span className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">{totalContributions}</span>
           <span className="text-[10px] text-neutral-400 font-sans ml-1.5">Contributions</span>
         </div>
-        <span className="text-[10px] font-mono text-white bg-white/10 px-2 py-0.5 rounded border border-white/20">
-          ↑ 32% vs last year
-        </span>
       </div>
 
-      {/* Contribution Heatmap Matrix */}
-      <div className="space-y-1 pt-1">
-        <div className="flex gap-2">
-          {/* Day Labels */}
-          <div className="flex flex-col justify-between text-[8px] text-neutral-500 font-mono py-0.5">
-            <span>Mon</span>
-            <span>Wed</span>
-            <span>Fri</span>
+      {/* Structured 7-Column Calendar Grid */}
+      <div className="flex-1 flex flex-col justify-center py-1">
+        <div className="w-full">
+          {/* Day of Week Headers */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-[8px] sm:text-[9px] font-mono text-neutral-500 pb-1 font-bold">
+            <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
           </div>
 
-          {/* Heatmap Grid */}
-          <div className="flex-1 overflow-x-auto scrollbar-none">
-            <div className="grid grid-flow-col grid-rows-7 gap-[2.5px] min-w-max">
-              {displayMatrix.map((row, rIdx) =>
-                row.map((cell, cIdx) => (
-                  <div
-                    key={`${rIdx}-${cIdx}`}
-                    className={`w-2.5 h-2.5 rounded-xs ${cell.styleClass} transition-colors hover:scale-125 cursor-pointer`}
-                    title={`${cell.date ? cell.date + ': ' : ''}${cell.level > 0 ? `${cell.level * 3}+ contributions` : 'No contributions'}`}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+            {/* Empty padding slots for days before 1st of month */}
+            {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
+              <div key={`pad-${idx}`} className="w-full h-5 sm:h-6 rounded-[3px] bg-transparent" />
+            ))}
 
-        {/* Month Labels */}
-        <div className="flex justify-between text-[8px] text-neutral-500 uppercase font-mono pl-6 pr-1">
-          <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
+            {/* Calendar Days */}
+            {calendar.map((day) => {
+              const dateParts = day.date.split('-');
+              const year = parseInt(dateParts[0], 10);
+              const month = parseInt(dateParts[1], 10) - 1;
+              const dayNum = parseInt(dateParts[2], 10);
+              const dateObj = new Date(Date.UTC(year, month, dayNum));
+              
+              const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+              const tooltip = `${formattedDate}\n${day.contributionCount === 0 ? 'No contributions' : `${day.contributionCount} contribution${day.contributionCount > 1 ? 's' : ''}`}`;
+
+              return (
+                <div
+                  key={day.date}
+                  title={tooltip}
+                  className={`w-full h-5 sm:h-6 rounded-[3px] ${getCellColor(day.contributionCount)} flex items-center justify-center text-[8px] sm:text-[9px] font-bold hover:scale-105 transition-transform cursor-pointer border border-[#1a1d26]/60`}
+                >
+                  {dayNum}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Metrics 4-Grid matching real GitHub API numbers */}
       <div className="grid grid-cols-4 gap-2 text-left pt-2 border-t border-[#161822]">
         <div>
-          <span className="text-xs sm:text-sm font-extrabold text-white block">{stats.repositories || 24}</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block">{repositories}</span>
           <span className="text-[8px] text-neutral-500 uppercase block">Repositories</span>
         </div>
         <div>
-          <span className="text-xs sm:text-sm font-extrabold text-white block">{stats.commits || 35}</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block">{commits}</span>
           <span className="text-[8px] text-neutral-500 uppercase block">Commits</span>
         </div>
         <div>
-          <span className="text-xs sm:text-sm font-extrabold text-white block">{stats.prs || 16}</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block">{pullRequests}</span>
           <span className="text-[8px] text-neutral-500 uppercase block">Pull Requests</span>
         </div>
         <div>
-          <span className="text-xs sm:text-sm font-extrabold text-white block">{stats.issuesClosed || 8}</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block">{issues}</span>
           <span className="text-[8px] text-neutral-500 uppercase block">Issues</span>
         </div>
       </div>
@@ -346,54 +420,113 @@ export function FeaturedProjectWidget({ onSelectProject }: { onSelectProject?: (
   );
 }
 
-/* 4c. Top Languages Widget */
+/* Custom Tech Icons for Top Tech Stack Widget */
+function SpringBootIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#6DB33F">
+      <path d="M22.08 9.9c-.39-4.83-4.32-8.5-9.18-8.5-5.11 0-9.25 4.14-9.25 9.25 0 4.47 3.17 8.2 7.42 9.06.66.13 1.34.2 2.03.2 5.11 0 9.25-4.14 9.25-9.25 0-.26-.01-.52-.03-.76zm-9.28 7.75c-3.87 0-7-3.13-7-7 0-3.38 2.4-6.2 5.62-6.85 3.86-.78 7.37 1.95 7.82 5.81.42 3.99-2.52 7.64-6.52 8.04h-.92z"/>
+    </svg>
+  );
+}
+
+function ReactIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#61DAFB" strokeWidth="1.6">
+      <ellipse cx="12" cy="12" rx="9" ry="4.2" transform="rotate(0 12 12)" />
+      <ellipse cx="12" cy="12" rx="9" ry="4.2" transform="rotate(60 12 12)" />
+      <ellipse cx="12" cy="12" rx="9" ry="4.2" transform="rotate(120 12 12)" />
+      <circle cx="12" cy="12" r="2" fill="#61DAFB" />
+    </svg>
+  );
+}
+
+function NextjsIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="#000000" stroke="#FFFFFF" strokeWidth="1.5" />
+      <path d="M14.5 9.5V14.5M9.5 9.5V14.5L14.5 9.5" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function JSIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="4" fill="#F7DF1E"/>
+      <path d="M11.5 17.5c.3.5.7.8 1.4.8.8 0 1.3-.4 1.3-1.4v-6.4h2.2v6.5c0 2.2-1.3 3.2-3.4 3.2-1.8 0-3-1-3.4-2.2l1.9-.5zm-6.2.2c.4.8 1.3 1.3 2.5 1.3 1.3 0 2.2-.6 2.2-1.6 0-1-.6-1.4-1.9-1.9L7 15c-2-.8-2.9-1.8-2.9-3.4 0-2.3 1.8-3.7 4.4-3.7 2 0 3.3.8 4 2.2l-1.8 1.1c-.4-.7-1-1.2-2.2-1.2-1.1 0-1.9.6-1.9 1.4 0 .8.5 1.2 1.7 1.7l1.1.5c2.3 1 3.2 2 3.2 3.6 0 2.6-2 3.9-4.8 3.9-2.6 0-4-1.2-4.6-2.6l2.1-.8z" fill="#000000"/>
+    </svg>
+  );
+}
+
+function TailwindIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#38BDF8">
+      <path d="M12 6c-3.3 0-5.3 1.6-6 4.9 1.3-1.6 2.8-2.1 4.5-1.5 1 0.4 1.8 1.2 2.6 2.1 1.3 1.4 2.8 3 6.4 3 3.3 0 5.3-1.6 6-4.9-1.3 1.6-2.8 2.1-4.5 1.5-1-0.4-1.8-1.2-2.6-2.1-1.3-1.4-2.8-3-6.4-3zm-6 6c-3.3 0-5.3 1.6-6 4.9 1.3-1.6 2.8-2.1 4.5-1.5 1 0.4 1.8 1.2 2.6 2.1 1.3 1.4 2.8 3 6.4 3 3.3 0 5.3-1.6 6-4.9-1.3 1.6-2.8 2.1-4.5 1.5-1-0.4-1.8-1.2-2.6-2.1-1.3-1.4-2.8-3-6.4-3z" />
+    </svg>
+  );
+}
+
+function PythonIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      <path fill="#3776AB" d="M11.87 2c-4.4 0-4.13 1.9-4.13 1.9l.01 1.97h4.2v.6H6.03S2 6.02 2 10.45s3.52 4.28 3.52 4.28h1.05v-1.49s-.06-1.78 1.76-1.78h3.01s1.7.03 1.7-1.67V5.71s.27-3.71-4.17-3.71zM9.54 3.42a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5z"/>
+      <path fill="#FFD43B" d="M12.13 22c4.4 0 4.13-1.9 4.13-1.9l-.01-1.97h-4.2v-.6h5.92S22 17.98 22 13.55s-3.52-4.28-3.52-4.28h-1.05v1.49s.06 1.78-1.76 1.78h-3.01s-1.7-.03-1.7 1.67v4.07s-.27 3.71 4.17 3.71zm2.33-1.42a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/>
+    </svg>
+  );
+}
+
+function MySQLIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#4479A1">
+      <path d="M12 3c-4.42 0-8 1.79-8 4v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4zm0 2c3.87 0 6 1.34 6 2s-2.13 2-6 2-6-1.34-6-2 2.13-2 6-2zm0 14c-3.87 0-6-1.34-6-2v-2.3c1.44.82 3.6 1.3 6 1.3s4.56-.48 6-1.3V17c0 .66-2.13 2-6 2z"/>
+    </svg>
+  );
+}
+
+function DockerIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#2496ED">
+      <path d="M13.9 11h2.4v2.3h-2.4V11zm-3.1 0h2.4v2.3h-2.4V11zm-3.1 0h2.4v2.3H7.7V11zm-3.1 0h2.4v2.3H4.6V11zm6.2-3.1h2.4v2.3h-2.4V7.9zm-3.1 0h2.4v2.3H7.7V7.9zm6.2-3.1h2.4v2.3h-2.4V4.8zM2 15.6c.5 3.5 3.5 6.4 7.2 6.4 4.8 0 8.8-3.9 8.8-8.7V12h3c.6 0 1-.4 1-1s-.4-1-1-1h-3.4c-.6 0-1 .4-1 1v.3C15.6 10 14 9 12 9H2v6.6z" />
+    </svg>
+  );
+}
+
+/* 4c. Top Tech Stack Widget */
 export function TopLanguagesWidget() {
-  const { data } = useGitHubData();
-  const languages = data.languages || [
-    { name: 'TypeScript', percentage: 45.3 },
-    { name: 'Java', percentage: 28.6 },
-    { name: 'JavaScript', percentage: 12.4 },
-    { name: 'SQL', percentage: 8.7 },
-    { name: 'Other', percentage: 5.0 }
+  const techStack = [
+    { name: 'Spring Boot', icon: SpringBootIcon },
+    { name: 'React.js', icon: ReactIcon },
+    { name: 'Next.js', icon: NextjsIcon },
+    { name: 'JavaScript', icon: JSIcon },
+    { name: 'Tailwind CSS', icon: TailwindIcon },
+    { name: 'Python', icon: PythonIcon },
+    { name: 'MySQL', icon: MySQLIcon },
+    { name: 'Docker', icon: DockerIcon },
   ];
 
-  const colors: Record<string, string> = {
-    TypeScript: '#3b82f6',
-    Java: '#f97316',
-    JavaScript: '#eab308',
-    SQL: '#06b6d4',
-    Other: '#a855f7'
-  };
-
   return (
-    <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] space-y-2.5 font-mono h-full flex flex-col justify-between">
+    <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] space-y-3 font-mono h-full flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-[11px] uppercase font-bold text-neutral-300 tracking-wider">
-          TOP LANGUAGES
+          TOP TECH STACK
         </span>
       </div>
 
-      <div className="space-y-2 flex-1 flex flex-col justify-center">
-        {languages.map((lang) => {
-          const color = colors[lang.name] || '#ffffff';
-          return (
-            <div key={lang.name} className="space-y-1">
-              <div className="flex items-center justify-between text-[10px]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                  <span className="text-neutral-300 font-medium">{lang.name}</span>
-                </div>
-                <span className="text-white font-bold">{lang.percentage}%</span>
+      <div className="flex-1 flex items-center justify-center py-1">
+        <div className="grid grid-cols-4 gap-2.5 sm:gap-3 w-full">
+          {techStack.map((tech) => {
+            const IconComp = tech.icon;
+            return (
+              <div
+                key={tech.name}
+                title={tech.name}
+                className="w-full aspect-square max-w-[48px] max-h-[48px] mx-auto rounded-xl bg-[#0c0e15] border border-[#161822] hover:border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-[0_0_12px_rgba(255,255,255,0.08)] cursor-pointer"
+              >
+                <IconComp size={20} />
               </div>
-              <div className="w-full h-1.5 rounded-full bg-[#161822] overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${lang.percentage}%`, backgroundColor: color }}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -594,7 +727,7 @@ export function TerminalWidget() {
 /* 7. Recent Commits — Real-Time API Data */
 export function RecentCommitsWidget() {
   const { data, loading } = useGitHubData();
-  const commits = data.commits;
+  const commits = data?.commits || [];
 
   return (
     <div className="p-3.5 rounded-xl bg-[#090a0e] border border-[#1a1d26] space-y-2.5 font-mono">
@@ -628,7 +761,7 @@ export function RecentCommitsWidget() {
       </div>
 
       <div className="pt-2 border-t border-[#161822]">
-        <a href={`https://github.com/${data.username}`} target="_blank" rel="noreferrer" className="text-[10px] text-white hover:text-neutral-200 flex items-center gap-1 font-bold">
+        <a href={data?.username ? `https://github.com/${data.username}` : '#'} target="_blank" rel="noreferrer" className="text-[10px] text-white hover:text-neutral-200 flex items-center gap-1 font-bold">
           View all commits <ArrowRight size={11} />
         </a>
       </div>

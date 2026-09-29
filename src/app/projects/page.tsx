@@ -4,12 +4,13 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
-  Search, ExternalLink, Play, Star, Code2, ArrowRight, 
+  Search, ExternalLink, Play, Star, Code2, ArrowRight, ArrowLeft, Home,
   ChevronDown, X, Sparkles 
 } from 'lucide-react';
 import AIExplainerModal from '@/components/AIExplainerModal';
 import { projectsData, Project, personalData } from '@/data/portfolioData';
 import { GithubIcon } from '@/components/SocialIcons';
+import Navbar from '@/components/Navbar';
 
 export default function ProjectsPage() {
   const [activeSection, setActiveSection] = useState<string>('projects');
@@ -53,10 +54,24 @@ export default function ProjectsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#060709] text-white select-none font-sans">
+    <div className="min-h-screen bg-[#060709] text-white select-none font-sans space-y-4">
+      {/* Sticky Navigation Bar */}
+      <Navbar activeSection={activeSection} setActiveSection={setActiveSection} />
       
       {/* Main Content: Sidebar + Grid */}
-      <main className="max-w-[1600px] mx-auto px-3 sm:px-5 pt-4 pb-10">
+      <main className="max-w-[1600px] mx-auto px-3 sm:px-5 pt-2 pb-10">
+        {/* Top Header Navigation Row */}
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-[#0c0e14] border border-[#1a1e2a] hover:border-neutral-400 text-xs sm:text-sm font-sans font-bold text-neutral-200 hover:text-white transition-all shadow-sm group"
+          >
+            <ArrowLeft size={16} className="text-neutral-400 group-hover:text-white group-hover:-translate-x-1 transition-transform" />
+            <Home size={16} className="text-neutral-400 group-hover:text-white" />
+            <span>Return to Home Page</span>
+          </Link>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-4">
 
           {/* ===== LEFT SIDEBAR ===== */}
@@ -103,6 +118,16 @@ export default function ProjectsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Sidebar Return to Home Button */}
+              <Link
+                href="/"
+                className="w-full mt-3 py-2.5 rounded-xl bg-[#111520] border border-[#1f2536] hover:border-neutral-400 text-xs font-sans font-semibold text-neutral-200 hover:text-white flex items-center justify-center gap-2 transition-all group"
+              >
+                <ArrowLeft size={14} className="text-neutral-400 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
+                <Home size={14} className="text-neutral-400 group-hover:text-white" />
+                <span>Return to Home</span>
+              </Link>
             </div>
 
             {/* FILTER BY TECH Card */}
